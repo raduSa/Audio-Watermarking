@@ -1,8 +1,6 @@
 from scipy.io import wavfile
 import numpy as np
-
-def text_to_bits(text):
-    return ''.join(format(ord(c), '08b') for c in text)
+from utils import text_to_bits, bits_to_text, audio_to_bits, bits_to_audio
 
 def embed_lsb_text(input_wav, output_wav, watermark_text, num_lsbs=1):
     sample_rate, samples = wavfile.read(input_wav)
@@ -28,13 +26,6 @@ def embed_lsb_text(input_wav, output_wav, watermark_text, num_lsbs=1):
 
     wavfile.write(output_wav, sample_rate, samples)
     
-def bits_to_text(bits):
-    chars = []
-    for i in range(0, len(bits), 8):
-        byte = bits[i:i+8]
-        chars.append(chr(int(byte, 2)))
-    return ''.join(chars)
-
 def extract_lsb_text(watermarked_wav, watermark_length, num_lsbs=1):
     sample_rate, samples = wavfile.read(watermarked_wav)
     is_stereo = len(samples.shape) == 2
@@ -52,25 +43,6 @@ def extract_lsb_text(watermarked_wav, watermark_length, num_lsbs=1):
     bits_str = ''.join(bits)
     watermark_text = bits_to_text(bits_str)
     return watermark_text
-
-def audio_to_bits(samples):
-    bits = []
-    for sample in samples:
-        sample = int(sample)
-        unsigned_sample = sample if sample >= 0 else 65536 + sample
-        bits.append(format(unsigned_sample, '016b'))
-    return ''.join(bits)
-
-def bits_to_audio(bits):
-    samples = []
-    for i in range(0, len(bits), 16):
-        if i + 16 <= len(bits):
-            byte = bits[i:i+16]
-            sample = int(byte, 2)
-            if sample >= 32768:
-                sample -= 65536
-            samples.append(sample)
-    return samples
 
 def embed_lsb_audio(input_wav, output_wav, watermark_audio_wav, num_lsbs=1):
     sample_rate, host_samples = wavfile.read(input_wav)
