@@ -1,5 +1,5 @@
-from scipy.io import wavfile
 import numpy as np
+from scipy.io import wavfile
 from utils import text_to_bits, bits_to_text, audio_to_bits, bits_to_audio
 
 def embed_lsb_text(input_wav, output_wav, watermark_text, num_lsbs=1):
@@ -25,9 +25,9 @@ def embed_lsb_text(input_wav, output_wav, watermark_text, num_lsbs=1):
                 samples[i] = (samples[i] & ~(1 << b)) | (bit << b)
 
     wavfile.write(output_wav, sample_rate, samples)
-    
+
 def extract_lsb_text(watermarked_wav, watermark_length, num_lsbs=1):
-    sample_rate, samples = wavfile.read(watermarked_wav)
+    _, samples = wavfile.read(watermarked_wav)
     is_stereo = len(samples.shape) == 2
     
     bits = []
@@ -109,12 +109,12 @@ if __name__ == "__main__":
     watermark_audio = 'bruh.wav'
     embed_lsb_audio(input_audio, output_audio, watermark_audio, num_lsbs=num_lsbs)
     
-    _, watermark_samples = wavfile.read(watermark_audio)
+    watermark_sample_rate, watermark_samples = wavfile.read(watermark_audio)
     if len(watermark_samples.shape) == 2:
         watermark_len = watermark_samples.shape[0]
     else:
         watermark_len = len(watermark_samples)
     
     extracted_audio = extract_lsb_audio(output_audio, watermark_len, num_lsbs=num_lsbs)
-    wavfile.write('extracted_watermark.wav', 48000, np.array(extracted_audio, dtype=np.int16))
+    wavfile.write('extracted_watermark.wav', watermark_sample_rate, np.array(extracted_audio, dtype=np.int16))
     print(f"Extracted audio watermark saved to extracted_watermark.wav")
