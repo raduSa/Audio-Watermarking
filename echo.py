@@ -90,6 +90,7 @@ def extract_echo_blind(watermarked_wav,
 
     extracted_bits = ""
 
+    # Apply a window to reduce spectral leakage -> better spikes in cepstrum
     window = np.hanning(frame_size)
 
     for i in range(watermark_length):
@@ -101,9 +102,21 @@ def extract_echo_blind(watermarked_wav,
 
         frame = samples[start:end] * window
 
-        # Cepstrum computation
+        # # Calculate cepstrum autocorrelation alternatively using the autocorellation function (O(N^2))
+        # spectrum = np.fft.fft(frame)
+        # log_mag = np.log(np.abs(spectrum) + 1e-10)
+        # cepstrum = np.real(np.fft.ifft(log_mag))
+
+        # def cep_autocorr(c, k):
+        #     return np.sum(c[:-k] * c[k:])
+
+        # r0 = cep_autocorr(cepstrum, delay_0)
+        # r1 = cep_autocorr(cepstrum, delay_1)
+        
+
+        # Calculate cepstrum autocorrelation 
         spectrum = np.fft.fft(frame)
-        log_mag = np.log(np.abs(spectrum) + 1e-10)
+        log_mag = np.log(np.abs(spectrum) + 1e-10) ** 2 # apply log and squaring
         cepstrum = np.real(np.fft.ifft(log_mag))
 
         # Sanity check
@@ -112,11 +125,8 @@ def extract_echo_blind(watermarked_wav,
         # plt.axvline(delay_1)
         # plt.show()
 
-        def cep_autocorr(c, k):
-            return np.sum(c[:-k] * c[k:])
-
-        r0 = cep_autocorr(cepstrum, delay_0)
-        r1 = cep_autocorr(cepstrum, delay_1)
+        r0 = cepstrum[delay_0]
+        r1 = cepstrum[delay_1]        
         print(r0, r1)
 
         extracted_bits += '0' if r0 > r1 else '1'
