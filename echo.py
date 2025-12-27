@@ -2,13 +2,17 @@ from scipy.io import wavfile
 import numpy as np
 import utils
 import os
+import matplotlib.pyplot as plt
 
 def embed_echo(input_wav, output_wav, watermark_bits,
-                        delay_0=50, delay_1=100,
-                        alpha=0.5, frame_size=1024):
+               delay_0=50, delay_1=100,
+               alpha=0.4, decay=0.2,
+               echo_length=1,
+               frame_size=1024):
 
     sampling_rate, samples = wavfile.read(input_wav)
-    # Stereo to mono
+
+    # Stereo → mono
     if len(samples.shape) == 2:
         samples = samples[:, 0]
 
@@ -23,15 +27,20 @@ def embed_echo(input_wav, output_wav, watermark_bits,
             break
 
         frame = samples[start:end]
-        delay = delay_0 if bit == '0' else delay_1
+        delay = delay_0 if bit == '0' else delay_1        
 
-        for n in range(delay, frame_size):
-            output[start + n] += alpha * frame[n - delay]
+        for n in range(delay * echo_length, frame_size):
+            echo = 0.0
+            for k in range(1, echo_length + 1):
+                echo += (decay ** (k - 1)) * frame[n - k * delay]
+
+            output[start + n] += alpha * echo
 
     output = np.int16(np.clip(output, -32768, 32767))
     wavfile.write(output_wav, sampling_rate, output)
 
-    print("Non-blind echo watermark embedded.")
+    print("Echo watermark with decaying kernel embedded.")
+
 
 def extract_echo_nonblind(original_wav, watermarked_wav,
                           watermark_length,
@@ -81,6 +90,7 @@ def extract_echo_blind(watermarked_wav,
 
     extracted_bits = ""
 
+    # Apply a window to reduce spectral leakage -> better spikes in cepstrum
     window = np.hanning(frame_size)
 
     for i in range(watermark_length):
@@ -92,16 +102,34 @@ def extract_echo_blind(watermarked_wav,
 
         frame = samples[start:end] * window
 
-        # Cepstrum computation
+        # # Calculate cepstrum autocorrelation alternatively using the autocorellation function (O(N^2))
+        # spectrum = np.fft.fft(frame)
+        # log_mag = np.log(np.abs(spectrum) + 1e-10)
+        # cepstrum = np.real(np.fft.ifft(log_mag))
+
+        # def cep_autocorr(c, k):
+        #     return np.sum(c[:-k] * c[k:])
+
+        # r0 = cep_autocorr(cepstrum, delay_0)
+        # r1 = cep_autocorr(cepstrum, delay_1)
+        
+
+        # Calculate cepstrum autocorrelation 
         spectrum = np.fft.fft(frame)
-        log_mag = np.log(np.abs(spectrum) + 1e-10)
+        log_mag = np.log(np.abs(spectrum) + 1e-10) ** 2 # apply log and squaring
         cepstrum = np.real(np.fft.ifft(log_mag))
 
-        c0 = cepstrum[delay_0] + cepstrum[-delay_0]
-        c1 = cepstrum[delay_1] + cepstrum[-delay_1]
-        print(c0, c1)
+        # Sanity check
+        # plt.plot(cepstrum[:300])
+        # plt.axvline(delay_0)
+        # plt.axvline(delay_1)
+        # plt.show()
 
-        extracted_bits += '0' if c0 > c1 else '1'
+        r0 = cepstrum[delay_0]
+        r1 = cepstrum[delay_1]        
+        print(r0, r1)
+
+        extracted_bits += '0' if r0 > r1 else '1'
 
     return extracted_bits
 
