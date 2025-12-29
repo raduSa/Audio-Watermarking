@@ -27,6 +27,7 @@ from gf256 import *
 #     return msg + msg_out[-nsym:]
 
 # We get the codeword by evaluating the polynomial at alpha ^ (0 through n-1)
+# Equivalent do DFT over finite field
 def rs_eval_encode(msg, n):    
     k = len(msg)
     codeword = []
@@ -42,11 +43,7 @@ def rs_eval_encode(msg, n):
     return codeword
 
 
-msg = [10, 20, 30, 40, 50]
-
-encoded = rs_eval_encode(msg, 9)
-# encoded[0] = 11
-print(encoded)
+# DECODER
 
 def poly_add(a, b):
     res = [0] * max(len(a), len(b))
@@ -102,21 +99,22 @@ def solve_linear_system(A, b):
 
 def pgz_locator(syndromes):
     t = len(syndromes) // 2
-
-    for v in range(1, t + 1):
+    
+    for v in range(t, 0, -1):
         A = []
         b = []
         for i in range(v):
             A.append(syndromes[i:i+v])
             b.append(syndromes[i+v])
-
+        
         try:
             lambdas = solve_linear_system(A, b)
-            return [1] + lambdas
-        except ValueError:
+            
+            return [1] + lambdas[::-1] 
+        except ValueError:            
             pass
 
-    raise ValueError("Too many errors")
+    raise ValueError("Uncorrectable errors")
 
 def chien_search(locator, n):
     error_positions = []
@@ -167,7 +165,7 @@ def correct_errors(received, errors):
 def lagrange_interpolation(xs, ys):
     k = len(xs)
     poly = [0] * k
-
+    
     for i in range(k):
         num = [1]
         den = 1
@@ -185,20 +183,32 @@ def lagrange_interpolation(xs, ys):
 
 def rs_decode(received, n, k):
     syndromes = compute_syndromes(received, n, k)
-    print(syndromes)
+    # print(syndromes)
 
-    if max(syndromes) == 0:
-        return received[:k]
+    if max(syndromes) != 0:
+        locator = pgz_locator(syndromes)    
+        error_positions = chien_search(locator, n)    
+        errors = forney(syndromes, locator, error_positions)
+        corrected = correct_errors(received, errors)
 
-    locator = pgz_locator(syndromes)
-    error_positions = chien_search(locator, n)
-    errors = forney(syndromes, locator, error_positions)
-    corrected = correct_errors(received, errors)
+        ys = corrected        
+    else:
+        ys = received
 
     xs = [EXP[i] for i in range(k)]
-    ys = corrected[:k]
 
     return lagrange_interpolation(xs, ys)
 
-decoded = rs_decode(encoded, 9, 5)
-print(decoded)
+if __name__ == '__main__':
+    # --- Test Case ---
+    msg = [10, 20, 30, 40, 50]
+    print(f'Msg: {msg}')
+    encoded = rs_eval_encode(msg, 255) # This must be 255 for the math to work out (considering we are using syndrome decoding)
+    
+    print(f"Original: {encoded[:len(msg)]}")
+    encoded[0] = 11
+    encoded[4] = 99
+    print(f"Corrupted: {encoded[:len(msg)]}")
+
+    decoded = rs_decode(encoded, 255, 5)
+    print(f"decoded:  {decoded}")
