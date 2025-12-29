@@ -27,12 +27,24 @@ def bits_to_audio(bits):
             samples.append(sample)
     return samples
 
-
 import numpy as np
+from scipy.io import wavfile
 
 def SNR(original_signal, watermarked_signal):
-    original = np.array(original_signal)
-    watermarked = np.array(watermarked_signal)
+    if isinstance(original_signal, str):
+        _, original = wavfile.read(original_signal)
+        if len(original.shape) == 2:
+            original = original[:, 0]
+    else:
+        original = np.array(original_signal)
+    
+    if isinstance(watermarked_signal, str):
+        _, watermarked = wavfile.read(watermarked_signal)
+        if len(watermarked.shape) == 2:
+            watermarked = watermarked[:, 0]
+    else:
+        watermarked = np.array(watermarked_signal)
+    
     noise = watermarked - original
     
     signal_power = np.mean(original ** 2)
@@ -50,3 +62,7 @@ def bit_error_rate(original_bits, extracted_bits):
         raise ValueError("Bit sequences must have the same length")
     errors = sum(int(o) ^ int(e) for o, e in zip(original_bits, extracted_bits))
     return errors / len(original_bits)
+
+def character_error_rate(original_text, extracted_text):
+    errors = sum(o != e for o, e in zip(original_text, extracted_text))
+    return errors / len(original_text)

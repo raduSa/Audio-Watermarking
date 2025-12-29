@@ -50,6 +50,11 @@ def extract_echo_nonblind(original_wav, watermarked_wav,
     _, original = wavfile.read(original_wav)
     _, watermarked = wavfile.read(watermarked_wav)
 
+    if len(original.shape) == 2:
+        original = original[:, 0]
+    if len(watermarked.shape) == 2:
+        watermarked = watermarked[:, 0]
+
     original = original.astype(np.float32)
     watermarked = watermarked.astype(np.float32)
 
@@ -86,6 +91,10 @@ def extract_echo_blind(watermarked_wav,
     # For too low alpha values for the encoder might not be detected correctly
 
     sr, samples = wavfile.read(watermarked_wav)
+    
+    if len(samples.shape) == 2:
+        samples = samples[:, 0]
+    
     samples = samples.astype(np.float32)
 
     extracted_bits = ""
