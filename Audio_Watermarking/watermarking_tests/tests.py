@@ -6,7 +6,7 @@ from Audio_Watermarking.algorithms.qim import embed_qim, extract_qim
 from Audio_Watermarking.algorithms.qim_dither import embed_qim_dither, extract_qim_dither
 import numpy as np
 import matplotlib.pyplot as plt
-import os
+import os, warnings
 
 
 if __name__ == "__main__":
@@ -16,12 +16,15 @@ if __name__ == "__main__":
     watermark = 'Fix it from the outside'
     watermark_bits = text_to_bits(watermark)
 
+    warnings.filterwarnings("ignore", category=UserWarning)
     from Audio_Watermarking.watermarking_tests.attacks import add_noise
+    
+    noisy_audio = os.path.join(base_dir, f'noisy_{os.path.basename(output_audio)}')
 
     np.random.seed(42)
     embed_lsb(input_audio, output_audio, watermark_bits, num_lsbs=2)
     add_noise(output_audio)
-    extracted_bits = extract_lsb(f'noisy_{output_audio}', len(watermark_bits), num_lsbs=2)
+    extracted_bits = extract_lsb(noisy_audio, len(watermark_bits), num_lsbs=2)
     ber = bit_error_rate(watermark_bits, extracted_bits)
     print(f"BER: {ber:.2%}")
     
@@ -31,7 +34,7 @@ if __name__ == "__main__":
     
     embed_echo(input_audio, output_audio, watermark_bits, alpha=0.8)
     add_noise(output_audio)
-    extracted_bits = extract_echo_nonblind(input_audio, f'noisy_{output_audio}', len(watermark_bits))
+    extracted_bits = extract_echo_nonblind(input_audio, noisy_audio, len(watermark_bits))
     ber = bit_error_rate(watermark_bits, extracted_bits)
     print(f"BER: {ber:.2%}")
     extracted_text = bits_to_text(extracted_bits)
@@ -40,7 +43,7 @@ if __name__ == "__main__":
     
     embed_dct_iss(input_audio, output_audio, watermark_bits, alpha=0.8)
     add_noise(output_audio)
-    extracted_bits = extract_dct_spread_spectrum(f'noisy_{output_audio}', len(watermark_bits))
+    extracted_bits = extract_dct_spread_spectrum(noisy_audio, len(watermark_bits))
     ber = bit_error_rate(watermark_bits, extracted_bits)
     print(f"BER: {ber:.2%}")
     extracted_text = bits_to_text(extracted_bits)
@@ -53,7 +56,7 @@ if __name__ == "__main__":
     
     embed_qim(input_audio, output_audio, watermark_bits, delta=delta, frame_size=frame_size, overlap=overlap)
     add_noise(output_audio)
-    extracted_bits = extract_qim(f'noisy_{output_audio}', len(watermark_bits), delta=delta, frame_size=frame_size, overlap=overlap)
+    extracted_bits = extract_qim(noisy_audio, len(watermark_bits), delta=delta, frame_size=frame_size, overlap=overlap)
     ber = bit_error_rate(watermark_bits, extracted_bits)
     print(f"BER: {ber:.2%}")
     extracted_text = bits_to_text(extracted_bits)

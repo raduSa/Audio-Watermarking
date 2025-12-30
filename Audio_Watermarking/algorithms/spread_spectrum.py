@@ -1,7 +1,7 @@
 from scipy.io import wavfile
 import numpy as np
 from Audio_Watermarking.utils import utils
-import os
+import os, warnings
 import matplotlib.pyplot as plt
 from scipy.fftpack import dct, idct
 
@@ -84,7 +84,7 @@ def extract_dct_spread_spectrum(
 
         # Correlation with PN sequence
         corr = np.sum(X[k1:k2] * pn)
-        print(corr)
+        # print(corr)
 
         extracted_bits += '1' if corr > 0 else '0'
 
@@ -151,6 +151,8 @@ if __name__ == "__main__":
     input_audio = os.path.join(base_dir, 'Beginning 2.wav')
     output_audio = os.path.join(base_dir, 'watermarked.wav')
     watermark = 'I am a secret message!'
+    
+    warnings.filterwarnings("ignore", category=UserWarning)
 
     watermark_bits = utils.text_to_bits(watermark)
     print("Watermark bits:", watermark_bits)

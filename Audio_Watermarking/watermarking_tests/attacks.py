@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from scipy.io import wavfile
 from pydub import AudioSegment
 
@@ -29,7 +30,8 @@ def add_echo(input_wav_path, delay_sec=0.5, decay=0.5):
     if peak_out > 0:
         output *= peak_in / peak_out
     
-    write_audio(f'echoed_{input_wav_path}', sample_rate, output)
+    echoed_audio = os.path.join(os.path.dirname(input_wav_path), f'echoed_{os.path.basename(input_wav_path)}')
+    write_audio(echoed_audio, sample_rate, output)
 
 def add_noise(input_wav_path, snr_db=50):
     sample_rate, data = read_audio(input_wav_path)
@@ -37,26 +39,30 @@ def add_noise(input_wav_path, snr_db=50):
     noise_power = signal_power / (10**(snr_db / 10))
     noise = np.sqrt(noise_power) * np.random.randn(*data.shape)
     noisy_data = data + noise
-    write_audio(f'noisy_{input_wav_path}', sample_rate, noisy_data)
+    noisy_audio = os.path.join(os.path.dirname(input_wav_path), f'noisy_{os.path.basename(input_wav_path)}')
+    write_audio(noisy_audio, sample_rate, noisy_data)
     
 def amplify(input_wav_path, factor):
     sample_rate, data = read_audio(input_wav_path)
     amplified_data = data * factor
     amplified_data /= np.max(np.abs(amplified_data)) / np.max(np.abs(data))
-    write_audio(f'amplified_{input_wav_path}', sample_rate, amplified_data)
+    amplified_audio = os.path.join(os.path.dirname(input_wav_path), f'amplified_{os.path.basename(input_wav_path)}')
+    write_audio(amplified_audio, sample_rate, amplified_data)
 
 def compress(input_wav_path, bitrate="64k"):
     audio = AudioSegment.from_wav(input_wav_path)
-    compressed_path = f'compressed_{input_wav_path.replace(".wav", ".mp3")}'
+    compressed_path = os.path.join(os.path.dirname(input_wav_path), f'compressed_{os.path.basename(input_wav_path).replace(".wav", ".mp3")}')
     audio.export(compressed_path, format="mp3", bitrate=bitrate)
-    AudioSegment.from_mp3(compressed_path).export(f'decompressed_{input_wav_path}', format="wav")
+    compressed_audio = os.path.join(os.path.dirname(input_wav_path), f'decompressed_{os.path.basename(input_wav_path)}')
+    AudioSegment.from_mp3(compressed_path).export(compressed_audio, format="wav")
     
 def crop(input_wav_path, start_sec, end_sec):
     sample_rate, data = read_audio(input_wav_path)
     start_sample = int(start_sec * sample_rate)
     end_sample = int(end_sec * sample_rate)
     cropped = data[start_sample:end_sample]
-    write_audio(f'cropped_{input_wav_path}', sample_rate, cropped)
+    cropped_audio = os.path.join(os.path.dirname(input_wav_path), f'cropped_{os.path.basename(input_wav_path)}')
+    write_audio(cropped_audio, sample_rate, cropped)
     
 def lowpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     sample_rate, audio = read_audio(input_wav_path)
@@ -76,7 +82,8 @@ def lowpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     else:
         filtered_audio = np.convolve(audio, h, mode='same')
     
-    write_audio(f'lowpass_{input_wav_path}', sample_rate, filtered_audio)
+    lowpass_audio = os.path.join(os.path.dirname(input_wav_path), f'lowpass_{os.path.basename(input_wav_path)}')
+    write_audio(lowpass_audio, sample_rate, filtered_audio)
     
 def highpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     sample_rate, audio = read_audio(input_wav_path)
@@ -98,13 +105,15 @@ def highpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     else:
         filtered_audio = np.convolve(audio, h_hp, mode='same')
     
-    write_audio(f'highpass_{input_wav_path}', sample_rate, filtered_audio)
+    highpass_audio = os.path.join(os.path.dirname(input_wav_path), f'highpass_{os.path.basename(input_wav_path)}')
+    write_audio(highpass_audio, sample_rate, filtered_audio)
     
 def mix_to_mono(input_wav_path):
     sample_rate, data = read_audio(input_wav_path)
     if len(data.shape) == 2:
         mono_data = data.mean(axis=1)
-        write_audio(f'mono_{input_wav_path}', sample_rate, mono_data)
+        mono_audio = os.path.join(os.path.dirname(input_wav_path), f'mono_{os.path.basename(input_wav_path)}')
+        write_audio(mono_audio, sample_rate, mono_data)
     else:
         print("Audio is already mono!")
     
@@ -146,4 +155,5 @@ def resample(input_wav_path, target_rate):
             downsampled
         )
     
-    write_audio(f'resampled_{input_wav_path}', sample_rate, upsampled)
+    resampled_audio = os.path.join(os.path.dirname(input_wav_path), f'resampled_{os.path.basename(input_wav_path)}')
+    write_audio(resampled_audio, sample_rate, upsampled)

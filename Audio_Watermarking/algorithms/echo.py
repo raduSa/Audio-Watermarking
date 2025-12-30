@@ -1,7 +1,7 @@
 from scipy.io import wavfile
 import numpy as np
 from Audio_Watermarking.utils import utils
-import os
+import os, warnings
 import matplotlib.pyplot as plt
 
 def embed_echo(input_wav, output_wav, watermark_bits,
@@ -136,7 +136,7 @@ def extract_echo_blind(watermarked_wav,
 
         r0 = cepstrum[delay_0]
         r1 = cepstrum[delay_1]        
-        print(r0, r1)
+        # print(r0, r1)
 
         extracted_bits += '0' if r0 > r1 else '1'
 
@@ -150,6 +150,8 @@ if __name__ == "__main__":
     output_audio = os.path.join(base_dir, 'watermarked.wav')
     watermark = 'I am a secret message!'
 
+    warnings.filterwarnings("ignore", category=UserWarning)
+    
     # Text Watermark
     watermark_bits = utils.text_to_bits(watermark)    
     print(watermark_bits)

@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.io.wavfile as wavfile
 from scipy.fftpack import dct, idct
+import os, warnings
 from Audio_Watermarking.utils.utils import *
 
 MID_FREQ_START = 20
@@ -121,12 +122,16 @@ def extract_qim(watermarked_wav, watermark_length, delta=10, frame_size=1024, ov
 
 
 if __name__ == "__main__":
-    input_audio = 'Biome Fest.wav'
-    output_audio = 'watermarked.wav'
+    base_dir = 'Audio_Watermarking/sound_files'
+    input_audio = os.path.join(base_dir, 'Biome Fest.wav')
+    output_audio = os.path.join(base_dir, 'watermarked.wav')
+    extracted_watermark = os.path.join(base_dir, 'extracted_watermark.wav')
     watermark = 'Fix it from the outside'
     delta = 10
     frame_size = 2048
     overlap = 512
+    
+    warnings.filterwarnings("ignore", category=UserWarning)
     
     # Text Watermark
     watermark_bits = text_to_bits(watermark)
@@ -136,7 +141,7 @@ if __name__ == "__main__":
     print(f"Extracted Watermark: {extracted_watermark}")
     
     # Audio Watermark
-    # watermark_audio = 'bruh.wav'
+    # watermark_audio = os.path.join(base_dir, 'bruh.wav')
     # watermark_sample_rate, watermark_samples = wavfile.read(watermark_audio)
     # if len(watermark_samples.shape) == 2:
     #     watermark_samples = watermark_samples[:, 0]
@@ -144,5 +149,5 @@ if __name__ == "__main__":
     # embed_qim(input_audio, output_audio, watermark_bits, delta, frame_size, overlap)
     # extracted_bits = extract_qim(output_audio, len(watermark_bits), delta, frame_size, overlap)
     # extracted_audio = bits_to_audio(extracted_bits)
-    # wavfile.write('extracted_watermark.wav', watermark_sample_rate, np.array(extracted_audio, dtype=np.int16))
+    # wavfile.write(extracted_watermark, watermark_sample_rate, np.array(extracted_audio, dtype=np.int16))
     # print(f"Extracted audio watermark saved to extracted_watermark.wav")

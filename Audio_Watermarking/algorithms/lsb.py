@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.io import wavfile
+import os, warnings
 from Audio_Watermarking.utils.utils import *
 
 def embed_lsb(input_wav, output_wav, watermark_bits, num_lsbs=1):
@@ -53,9 +54,14 @@ def extract_lsb(watermarked_wav, num_bits, num_lsbs=1):
 
 
 if __name__ == "__main__":
-    input_audio = 'Beginning 2.wav'
-    output_audio = 'watermarked.wav'
+    base_dir = 'Audio_Watermarking/sound_files'
+    input_audio = os.path.join(base_dir, 'Beginning 2.wav')
+    output_audio = os.path.join(base_dir, 'watermarked.wav')
+    extracted_watermark = os.path.join(base_dir, 'extracted_watermark.wav')
+    watermark = 'I am a secret message!'
     num_lsbs = 3
+    
+    warnings.filterwarnings("ignore", category=UserWarning)
     
     # Text Watermark
     watermark_text = 'I love signal processing!'
@@ -70,7 +76,7 @@ if __name__ == "__main__":
     print(f"Match: {watermark_text == extracted_text}")
     
     # Audio Watermark
-    watermark_audio = 'bruh.wav'
+    watermark_audio = os.path.join(base_dir, 'bruh.wav')
     watermark_sr, watermark_samples = wavfile.read(watermark_audio)
     if len(watermark_samples.shape) == 2:
         watermark_samples = watermark_samples[:, 0]
@@ -81,6 +87,6 @@ if __name__ == "__main__":
     embed_lsb(input_audio, output_audio, watermark_bits, num_lsbs=num_lsbs)
     extracted_bits = extract_lsb(output_audio, len(watermark_bits), num_lsbs=num_lsbs)
     extracted_samples = bits_to_audio(extracted_bits)
-    wavfile.write('extracted_watermark.wav', watermark_sr, np.array(extracted_samples, dtype=np.int16))
+    wavfile.write(extracted_watermark, watermark_sr, np.array(extracted_samples, dtype=np.int16))
     print(f"Extracted audio: {len(extracted_samples)} samples")
     print(f"Saved as extracted_watermark.wav")
