@@ -1,2 +1,3 @@
 __pycache__/
 .venv/
+audio_watermarking.egg-info/*
