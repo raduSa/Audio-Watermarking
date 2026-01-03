@@ -11,33 +11,40 @@ def embed_echo(input_wav, output_wav, watermark_bits,
 
     sampling_rate, samples = wavfile.read(input_wav)
 
-    # Stereo → mono
-    if len(samples.shape) == 2:
-        samples = samples[:, 0]
+    is_stereo = len(samples.shape) == 2
+    
+    channels_to_process = [samples[:, 0], samples[:, 1]] if is_stereo else [samples]
+    watermarked_channels = []
+    
+    for channel_samples in channels_to_process:
+        samples = channel_samples.astype(np.float32)
+        output = np.copy(samples)
 
-    samples = samples.astype(np.float32)
-    output = np.copy(samples)
+        for i, bit in enumerate(watermark_bits):
+            start = i * frame_size
+            end = start + frame_size
 
-    for i, bit in enumerate(watermark_bits):
-        start = i * frame_size
-        end = start + frame_size
+            if end >= len(samples):
+                break
 
-        if end >= len(samples):
-            break
+            frame = samples[start:end]
+            delay = delay_0 if bit == '0' else delay_1        
 
-        frame = samples[start:end]
-        delay = delay_0 if bit == '0' else delay_1        
+            for n in range(delay * echo_length, frame_size):
+                echo = 0.0
+                for k in range(1, echo_length + 1):
+                    echo += (decay ** (k - 1)) * frame[n - k * delay]
 
-        for n in range(delay * echo_length, frame_size):
-            echo = 0.0
-            for k in range(1, echo_length + 1):
-                echo += (decay ** (k - 1)) * frame[n - k * delay]
+                output[start + n] += alpha * echo
 
-            output[start + n] += alpha * echo
-
-    output = np.int16(np.clip(output, -32768, 32767))
-    wavfile.write(output_wav, sampling_rate, output)
-
+        output = np.int16(np.clip(output, -32768, 32767))
+        watermarked_channels.append(output)
+        
+    if is_stereo:
+        watermarked_samples = np.column_stack(watermarked_channels)
+    else:
+        watermarked_samples = watermarked_channels[0]
+    wavfile.write(output_wav, sampling_rate, watermarked_samples)
     print("Echo watermark with decaying kernel embedded.")
 
 
@@ -90,57 +97,67 @@ def extract_echo_blind(watermarked_wav,
     # For too low alpha values for the encoder might not be detected correctly
 
     sr, samples = wavfile.read(watermarked_wav)
+    is_stereo = len(samples.shape) == 2
     
-    if len(samples.shape) == 2:
-        samples = samples[:, 0]
+    channels_to_process = [samples[:, 0], samples[:, 1]] if is_stereo else [samples]
+    all_extracted_bits = []
     
-    samples = samples.astype(np.float32)
+    for channel_samples in channels_to_process:
+        samples = channel_samples.astype(np.float32)
 
-    extracted_bits = ""
+        extracted_bits = ""
 
-    # Apply a window to reduce spectral leakage -> better spikes in cepstrum
-    window = np.hanning(frame_size)
+        # Apply a window to reduce spectral leakage -> better spikes in cepstrum
+        window = np.hanning(frame_size)
 
-    for i in range(watermark_length):
-        start = i * frame_size
-        end = start + frame_size
+        for i in range(watermark_length):
+            start = i * frame_size
+            end = start + frame_size
 
-        if end >= len(samples):
-            break
+            if end >= len(samples):
+                break
 
-        frame = samples[start:end] * window
+            frame = samples[start:end] * window
 
-        # # Calculate cepstrum autocorrelation alternatively using the autocorellation function (O(N^2))
-        # spectrum = np.fft.fft(frame)
-        # log_mag = np.log(np.abs(spectrum) + 1e-10)
-        # cepstrum = np.real(np.fft.ifft(log_mag))
+            # # Calculate cepstrum autocorrelation alternatively using the autocorellation function (O(N^2))
+            # spectrum = np.fft.fft(frame)
+            # log_mag = np.log(np.abs(spectrum) + 1e-10)
+            # cepstrum = np.real(np.fft.ifft(log_mag))
 
-        # def cep_autocorr(c, k):
-        #     return np.sum(c[:-k] * c[k:])
+            # def cep_autocorr(c, k):
+            #     return np.sum(c[:-k] * c[k:])
 
-        # r0 = cep_autocorr(cepstrum, delay_0)
-        # r1 = cep_autocorr(cepstrum, delay_1)
-        
+            # r0 = cep_autocorr(cepstrum, delay_0)
+            # r1 = cep_autocorr(cepstrum, delay_1)
+            
 
-        # Calculate cepstrum autocorrelation 
-        spectrum = np.fft.fft(frame)
-        log_mag = np.log(np.abs(spectrum) + 1e-10) ** 2 # apply log and squaring
-        cepstrum = np.real(np.fft.ifft(log_mag))
+            # Calculate cepstrum autocorrelation 
+            spectrum = np.fft.fft(frame)
+            log_mag = np.log(np.abs(spectrum) + 1e-10) ** 2 # apply log and squaring
+            cepstrum = np.real(np.fft.ifft(log_mag))
 
-        # Sanity check
-        # plt.plot(cepstrum[:300])
-        # plt.axvline(delay_0)
-        # plt.axvline(delay_1)
-        # plt.show()
+            # Sanity check
+            # plt.plot(cepstrum[:300])
+            # plt.axvline(delay_0)
+            # plt.axvline(delay_1)
+            # plt.show()
 
-        r0 = cepstrum[delay_0]
-        r1 = cepstrum[delay_1]        
-        # print(r0, r1)
+            r0 = cepstrum[delay_0]
+            r1 = cepstrum[delay_1]        
+            # print(r0, r1)
 
-        extracted_bits += '0' if r0 > r1 else '1'
+            extracted_bits += '0' if r0 > r1 else '1'
+        all_extracted_bits.append(extracted_bits)
 
-    return extracted_bits
-
+    # Majority voting if stereo
+    if is_stereo:
+        final_bits = []
+        for i in range(watermark_length):
+            bit_votes = [int(channel_bits[i]) for channel_bits in all_extracted_bits]
+            final_bits.append(str(1 if sum(bit_votes) > len(bit_votes) / 2 else 0))
+        return ''.join(final_bits)
+    else:
+        return ''.join(all_extracted_bits[0])
 
 
 if __name__ == "__main__":

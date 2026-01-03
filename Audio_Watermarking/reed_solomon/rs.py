@@ -1,4 +1,4 @@
-from gf256 import *
+from .gf256 import *
 
 # def poly_mul(p, q):
 #     r = [0] * (len(p) + len(q) - 1)

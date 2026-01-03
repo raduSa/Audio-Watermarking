@@ -18,16 +18,16 @@ if __name__ == "__main__":
     watermark_bits = text_to_bits(watermark)
 
     warnings.filterwarnings("ignore", category=UserWarning)
-    from Audio_Watermarking.watermarking_tests.attacks import resample
+    from Audio_Watermarking.watermarking_tests.attacks import speed_change
     
-    resampled_audio = os.path.join(base_dir, f'resampled_16000Hz_{os.path.basename(output_audio)}')
+    sped_audio = os.path.join(base_dir, f'sped_{os.path.basename(output_audio)}')
 
     plt.figure(figsize=(10, 4))
     bers = []
     np.random.seed(42)
     embed_lsb(input_audio, output_audio, watermark_bits, num_lsbs=2)
-    resample(output_audio, 16000)
-    extracted_bits = extract_lsb(resampled_audio, len(watermark_bits), num_lsbs=2)
+    speed_change(output_audio, speed_factor=1.001)
+    extracted_bits = extract_lsb(sped_audio, len(watermark_bits), num_lsbs=2)
     ber = bit_error_rate(watermark_bits, extracted_bits)
     bers.append(ber)
     print(f"BER: {ber:.2%}")
@@ -37,8 +37,8 @@ if __name__ == "__main__":
     print(f"Extracted: '{extracted_text}'")
     
     embed_echo(input_audio, output_audio, watermark_bits, alpha=0.8)
-    resample(output_audio, 16000)
-    extracted_bits = extract_echo_blind(resampled_audio, len(watermark_bits))
+    speed_change(output_audio, speed_factor=1.001)
+    extracted_bits = extract_echo_blind(sped_audio, len(watermark_bits))
     ber = bit_error_rate(watermark_bits, extracted_bits)
     bers.append(ber)
     print(f"BER: {ber:.2%}")
@@ -47,8 +47,8 @@ if __name__ == "__main__":
     print(f"Extracted: '{extracted_text}'")
     
     embed_dct_iss(input_audio, output_audio, watermark_bits, alpha=0.8)
-    resample(output_audio, 16000)
-    extracted_bits = extract_dct_spread_spectrum(resampled_audio, len(watermark_bits))
+    speed_change(output_audio, speed_factor=1.001)
+    extracted_bits = extract_dct_spread_spectrum(sped_audio, len(watermark_bits))
     ber = bit_error_rate(watermark_bits, extracted_bits)
     bers.append(ber)
     print(f"BER: {ber:.2%}")
@@ -61,8 +61,8 @@ if __name__ == "__main__":
     overlap = 512
     
     embed_qim(input_audio, output_audio, watermark_bits, delta=delta, frame_size=frame_size, overlap=overlap)
-    resample(output_audio, 16000)
-    extracted_bits = extract_qim(resampled_audio, len(watermark_bits), delta=delta, frame_size=frame_size, overlap=overlap)
+    speed_change(output_audio, speed_factor=1.001)
+    extracted_bits = extract_qim(sped_audio, len(watermark_bits), delta=delta, frame_size=frame_size, overlap=overlap)
     ber = bit_error_rate(watermark_bits, extracted_bits)
     bers.append(ber)
     print(f"BER: {ber:.2%}")
@@ -71,8 +71,8 @@ if __name__ == "__main__":
     print(f"Extracted: '{extracted_text}'")
     
     embed_dwt_qim(input_audio, output_audio, watermark_bits, delta=delta, frame_size=frame_size, overlap=overlap)
-    resample(output_audio, 16000)
-    extracted_bits = extract_dwt_qim(resampled_audio, len(watermark_bits), delta=delta, frame_size=frame_size, overlap=overlap)
+    speed_change(output_audio, speed_factor=1.001)
+    extracted_bits = extract_dwt_qim(sped_audio, len(watermark_bits), delta=delta, frame_size=frame_size, overlap=overlap)
     ber = bit_error_rate(watermark_bits, extracted_bits)
     bers.append(ber)
     print(f"BER: {ber:.2%}")
@@ -82,9 +82,9 @@ if __name__ == "__main__":
     
     plt.bar(['LSB', 'Echo', 'Spread-Spectrum', 'QIM', 'DWT-QIM'], bers, color='skyblue')
     plt.ylabel('Bit Error Rate (BER)')
-    plt.title('BER after Resampling Attack (16kHz)')
+    plt.title('BER after Speed Attack')
     plt.ylim(0, 1)
     plt.grid(axis='y')
     plt.tight_layout()
-    plt.savefig(os.path.join(base_dir, 'BER_Resample_Attack.pdf'))
+    plt.savefig(os.path.join(base_dir, 'BER_Speed_Attack.pdf'))
     plt.show()
