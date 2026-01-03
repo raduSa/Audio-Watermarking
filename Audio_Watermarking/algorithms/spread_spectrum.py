@@ -62,6 +62,10 @@ def extract_dct_spread_spectrum(
 ):
     _, samples = wavfile.read(watermarked_wav)
 
+    # Stereo → mono
+    if len(samples.shape) == 2:
+        samples = samples[:, 0]
+
     samples = samples.astype(np.float32)
 
     pn_length = k2 - k1

@@ -46,7 +46,6 @@ def add_noise(input_wav_path, snr_db=50):
 def amplify(input_wav_path, factor):
     sample_rate, data = read_audio(input_wav_path)
     amplified_data = data * factor
-    amplified_data /= np.max(np.abs(amplified_data)) / np.max(np.abs(data))
     amplified_audio = os.path.join(os.path.dirname(input_wav_path), f'amplified_{os.path.basename(input_wav_path)}')
     write_audio(amplified_audio, sample_rate, amplified_data)
 
