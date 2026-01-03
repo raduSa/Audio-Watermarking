@@ -18,51 +18,63 @@ if __name__ == "__main__":
     watermark_bits = text_to_bits(watermark)
 
     warnings.filterwarnings("ignore", category=UserWarning)
+    from Audio_Watermarking.watermarking_tests.attacks import add_noise
     
-    fig, axs = plt.subplots(4, figsize=(12, 10))
-    
-    snrs_lsb = []
-    for num_lsbs in range(1, 6):
-        embed_lsb(input_audio, output_audio, watermark_bits, num_lsbs=num_lsbs)
-        snrs_lsb.append(SNR(input_audio, output_audio))
-    
-    axs[0].plot(range(1, 6), snrs_lsb, marker='o')
-    axs[0].set_title('LSB Watermarking: SNR vs Number of LSBs')
-    axs[0].set_xlabel('LSB Number')
-    axs[0].set_ylabel('SNR (dB)')
-    axs[0].grid()
-    
-    snrs_echo = []
-    for alpha in np.linspace(0.1, 0.5, 5):
-        embed_echo(input_audio, output_audio, watermark_bits, alpha=alpha)
-        snrs_echo.append(SNR(input_audio, output_audio))
-    
-    axs[1].plot(np.linspace(0.1, 0.5, 5), snrs_echo, marker='o', color='orange')
-    axs[1].set_title('Echo Watermarking: SNR vs Alpha')
-    axs[1].set_xlabel('Alpha (Amplitude)')
-    axs[1].set_ylabel('SNR (dB)')
-    axs[1].grid()
-    
-    snrs_ss = []
-    for alpha in np.linspace(0.1, 0.5, 5):
-        embed_dct_iss(input_audio, output_audio, watermark_bits, alpha=alpha)
-        snrs_ss.append(SNR(input_audio, output_audio))
-    axs[2].plot(np.linspace(0.1, 0.5, 5), snrs_ss, marker='o', color='green')
-    axs[2].set_title('Spread Spectrum Watermarking: SNR vs Alpha')
-    axs[2].set_xlabel('Alpha (Amplitude)')
-    axs[2].set_ylabel('SNR (dB)')
-    axs[2].grid()
-    
-    snrs_qim = []
-    for delta in [5, 10, 15, 20, 25]:
-        embed_qim(input_audio, output_audio, watermark_bits, delta, frame_size=2048, overlap=512)
-        snrs_qim.append(SNR(input_audio, output_audio))
-    axs[3].plot([5, 10, 15, 20, 25], snrs_qim, marker='o', color='red')
-    axs[3].set_title('QIM Watermarking: SNR vs Delta')
-    axs[3].set_xlabel('Delta (Step Size)')
-    axs[3].set_ylabel('SNR (dB)')
-    axs[3].grid()
+    noisy_audio = os.path.join(base_dir, f'noisy_{os.path.basename(output_audio)}')
 
+    plt.figure(figsize=(10, 4))
+    bers = []
+    np.random.seed(42)
+    embed_lsb(input_audio, output_audio, watermark_bits, num_lsbs=2)
+    add_noise(output_audio)
+    extracted_bits = extract_lsb(noisy_audio, len(watermark_bits), num_lsbs=2)
+    ber = bit_error_rate(watermark_bits, extracted_bits)
+    bers.append(ber)
+    print(f"BER: {ber:.2%}")
+    
+    extracted_text = bits_to_text(extracted_bits)
+    print(f"Original: '{watermark}'")
+    print(f"Extracted: '{extracted_text}'")
+    
+    embed_echo(input_audio, output_audio, watermark_bits, alpha=0.8)
+    add_noise(output_audio)
+    extracted_bits = extract_echo_nonblind(input_audio, noisy_audio, len(watermark_bits))
+    ber = bit_error_rate(watermark_bits, extracted_bits)
+    bers.append(ber)
+    print(f"BER: {ber:.2%}")
+    extracted_text = bits_to_text(extracted_bits)
+    print(f"Original: '{watermark}'")
+    print(f"Extracted: '{extracted_text}'")
+    
+    embed_dct_iss(input_audio, output_audio, watermark_bits, alpha=0.8)
+    add_noise(output_audio)
+    extracted_bits = extract_dct_spread_spectrum(noisy_audio, len(watermark_bits))
+    ber = bit_error_rate(watermark_bits, extracted_bits)
+    bers.append(ber)
+    print(f"BER: {ber:.2%}")
+    extracted_text = bits_to_text(extracted_bits)
+    print(f"Original: '{watermark}'")
+    print(f"Extracted: '{extracted_text}'")
+    
+    delta = 10
+    frame_size = 2048
+    overlap = 512
+    
+    embed_qim(input_audio, output_audio, watermark_bits, delta=delta, frame_size=frame_size, overlap=overlap)
+    add_noise(output_audio)
+    extracted_bits = extract_qim(noisy_audio, len(watermark_bits), delta=delta, frame_size=frame_size, overlap=overlap)
+    ber = bit_error_rate(watermark_bits, extracted_bits)
+    bers.append(ber)
+    print(f"BER: {ber:.2%}")
+    extracted_text = bits_to_text(extracted_bits)
+    print(f"Original: '{watermark}'")
+    print(f"Extracted: '{extracted_text}'")
+    
+    plt.bar(['LSB', 'Echo', 'Spread-Spectrum', 'QIM'], bers, color='skyblue')
+    plt.ylabel('Bit Error Rate (BER)')
+    plt.title('BER after Noise Attack')
+    plt.ylim(0, 1)
+    plt.grid(axis='y')
     plt.tight_layout()
-    plt.savefig('Watermark_SNR_Comparison.pdf')
+    plt.savefig(os.path.join(base_dir, 'BER_Noise_Attack.pdf'))
     plt.show()
