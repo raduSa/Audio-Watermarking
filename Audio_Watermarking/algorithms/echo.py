@@ -2,7 +2,6 @@ from scipy.io import wavfile
 import numpy as np
 from Audio_Watermarking.utils import utils
 import os, warnings
-import matplotlib.pyplot as plt
 
 def embed_echo(input_wav, output_wav, watermark_bits,
                delay_0=50, delay_1=100,

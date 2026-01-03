@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from scipy.io import wavfile
+from scipy import signal
 from pydub import AudioSegment
 
 def read_audio(input_wav_path):
@@ -64,6 +65,14 @@ def crop(input_wav_path, start_sec, end_sec):
     cropped_audio = os.path.join(os.path.dirname(input_wav_path), f'cropped_{os.path.basename(input_wav_path)}')
     write_audio(cropped_audio, sample_rate, cropped)
     
+def insert_silence(input_wav_path, silence_duration_sec=1.0):
+    sample_rate, data = read_audio(input_wav_path)
+    silence_samples = int(silence_duration_sec * sample_rate)
+    silence = np.zeros((silence_samples, data.shape[1])) if len(data.shape) == 2 else np.zeros(silence_samples)
+    modified_data = np.concatenate((data[:len(data)//2], silence, data[len(data)//2:]))
+    silence_audio = os.path.join(os.path.dirname(input_wav_path), f'silence_{os.path.basename(input_wav_path)}')
+    write_audio(silence_audio, sample_rate, modified_data)
+
 def lowpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     sample_rate, audio = read_audio(input_wav_path)
     is_stereo = len(audio.shape) == 2
@@ -118,42 +127,45 @@ def mix_to_mono(input_wav_path):
         print("Audio is already mono!")
     
 def resample(input_wav_path, target_rate):
-    sample_rate, data = read_audio(input_wav_path)
-    is_stereo = len(data.shape) == 2
-    duration = data.shape[0] / sample_rate
-    target_length = int(duration * target_rate)
+    if target_rate <= 0:
+        raise ValueError("Target rate must be positive!")
     
-    # Downsample
+    sample_rate, data = read_audio(input_wav_path)
+    if target_rate >= sample_rate:
+        raise ValueError("Target rate must be lower than original sample rate for downsampling attack!")
+
+    is_stereo = len(data.shape) == 2
+    ratio = target_rate / sample_rate
+    target_length = max(1, int(data.shape[0] * ratio))
+    
+    # Downsample with anti-aliasing
     if is_stereo:
         downsampled = np.zeros((target_length, data.shape[1]))
         for channel in range(data.shape[1]):
-            downsampled[:, channel] = np.interp(
-                np.linspace(0.0, duration, target_length, endpoint=False),
-                np.linspace(0.0, duration, data.shape[0], endpoint=False),
-                data[:, channel]
-            )
+            downsampled[:, channel] = signal.resample(data[:, channel], target_length)
     else:
-        downsampled = np.interp(
-            np.linspace(0.0, duration, target_length, endpoint=False),
-            np.linspace(0.0, duration, data.shape[0], endpoint=False),
-            data
-        )
+        downsampled = signal.resample(data, target_length)
     
-    # Upsample back
+    # Upsample back to original length
+    original_length = data.shape[0]
     if is_stereo:
-        upsampled = np.zeros((data.shape[0], data.shape[1]))
+        upsampled = np.zeros((original_length, data.shape[1]))
         for channel in range(data.shape[1]):
-            upsampled[:, channel] = np.interp(
-                np.linspace(0.0, duration, data.shape[0], endpoint=False),
-                np.linspace(0.0, duration, target_length, endpoint=False),
-                downsampled[:, channel]
-            )
+            upsampled[:, channel] = signal.resample(downsampled[:, channel], original_length)
     else:
-        upsampled = np.interp(
-            np.linspace(0.0, duration, data.shape[0], endpoint=False),
-            np.linspace(0.0, duration, target_length, endpoint=False),
-            downsampled
-        )
+        upsampled = signal.resample(downsampled, original_length)
     
-    resampled_audio = os.path.join(os.path.dirname(input_wav_path), f'resampled_{os.path.basename(input_wav_path)}')
+    resampled_audio = os.path.join(os.path.dirname(input_wav_path), f'resampled_{target_rate}Hz_{os.path.basename(input_wav_path)}')
     write_audio(resampled_audio, sample_rate, upsampled)
+    
+    return resampled_audio
+
+def speed_change(input_wav_path, speed_factor=1.5):
+    audio = AudioSegment.from_wav(input_wav_path)
+    sped_audio = audio._spawn(audio.raw_data, overrides={
+        "frame_rate": int(audio.frame_rate * speed_factor)
+    })
+    sped_audio = sped_audio.set_frame_rate(audio.frame_rate)
+    output_path = os.path.join(os.path.dirname(input_wav_path), f'speed_{speed_factor}x_{os.path.basename(input_wav_path)}')
+    sped_audio.export(output_path, format="wav")
+    return output_path

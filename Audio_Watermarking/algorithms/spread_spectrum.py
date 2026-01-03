@@ -2,7 +2,6 @@ from scipy.io import wavfile
 import numpy as np
 from Audio_Watermarking.utils import utils
 import os, warnings
-import matplotlib.pyplot as plt
 from scipy.fftpack import dct, idct
 
 def embed_dct_spread_spectrum(
