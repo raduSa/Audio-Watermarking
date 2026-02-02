@@ -4,6 +4,7 @@ from Audio_Watermarking.utils.utils import bit_error_rate
 import os, warnings
 import matplotlib.pyplot as plt
 from Audio_Watermarking.watermarking_tests.algorithm_interfaces import *
+from copy import deepcopy
 
 ATTACKS = {
     "noise": {
@@ -108,11 +109,13 @@ if __name__ == "__main__":
     ]
 
     watermark_bits = np.random.randint(0, 2, 256)
+    audio_dataset = f'Audio_Watermarking/sound_files/audio_dataset'
+    test_outputs = f'Audio_Watermarking/watermarking_tests/testing_helper'
 
     evaluate_algorithms_on_attack(
         algorithms=algorithms,
-        attack='noise'
-        dataset_dir='dataset_wavs',
+        attack='noise',
+        dataset_dir=audio_dataset,
         watermark_bits=watermark_bits,
-        output_dir='evaluation_results'
+        output_dir=test_outputs
     )
