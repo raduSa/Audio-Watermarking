@@ -5,7 +5,7 @@ from scipy.fftpack import dct, idct
 from Audio_Watermarking.utils.utils import *
 import os, warnings
 
-def embed_dct_dwt_svd(input_wav, output_wav, watermark_bits, frame_size = 2048):
+def embed_dct_dwt_svd(input_wav, output_wav, watermark_bits, step_size = 150.0, frame_size = 1024):
     sample_rate, samples = wavfile.read(input_wav)
     is_stereo = len(samples.shape) == 2
     channels_to_process = ([samples[:, 0], samples[:, 1]] if is_stereo else [samples])
@@ -31,13 +31,12 @@ def embed_dct_dwt_svd(input_wav, output_wav, watermark_bits, frame_size = 2048):
             U, S, Vt = np.linalg.svd(C, full_matrices=False)
             
             S_marked = S.copy()
-            Q = 150.0
-            quantized = np.round(S[0] / Q) * Q
+            quantized = np.round(S[0] / step_size) * step_size
             bit = int(watermark_bits[i])
             if bit == 0:
-                S_marked[0] = quantized + Q / 4
+                S_marked[0] = quantized + step_size / 4
             else:
-                S_marked[0] = quantized + 3 * Q / 4
+                S_marked[0] = quantized + 3 * step_size / 4
                 
             C_marked = U @ np.diag(S_marked) @ Vt
             Y_marked = Y.copy()
@@ -62,7 +61,7 @@ def embed_dct_dwt_svd(input_wav, output_wav, watermark_bits, frame_size = 2048):
     wavfile.write(output_wav, sample_rate, np.int16(np.clip(watermarked_samples, -32768, 32767)))
     print("DCT-DWT-SVD watermark embedded.")
 
-def extract_dct_dwt_svd(watermarked_wav, watermark_length, frame_size = 2048):
+def extract_dct_dwt_svd(watermarked_wav, watermark_length, step_size = 150.0, frame_size = 1024):
     _, samples = wavfile.read(watermarked_wav)
     is_stereo = len(samples.shape) == 2
 
@@ -90,9 +89,8 @@ def extract_dct_dwt_svd(watermarked_wav, watermark_length, frame_size = 2048):
             C = Y[:N*N].reshape(N, N)
             U, S, Vt = np.linalg.svd(C, full_matrices=False)
             
-            Q = 150.0
-            R = S[0] % Q
-            if R < Q / 2:
+            R = S[0] % step_size
+            if R < step_size / 2:
                 extracted_bits += '0'
             else:
                 extracted_bits += '1'
@@ -114,13 +112,14 @@ if __name__ == "__main__":
     output_audio = os.path.join(base_dir, 'svd_watermarked.wav')
     extracted_watermark = os.path.join(base_dir, 'extracted_watermark.wav')
     watermark = 'Fix it from the outside'
-    frame_size = 4096
+    frame_size = 1024
+    step_size = 150.0
     
     warnings.filterwarnings("ignore", category=UserWarning)
     
     # Text Watermark
     watermark_bits = text_to_bits(watermark)
-    embed_dct_dwt_svd(input_audio, output_audio, watermark_bits, frame_size)
-    extracted_bits = extract_dct_dwt_svd(output_audio, len(watermark_bits), frame_size)
+    embed_dct_dwt_svd(input_audio, output_audio, watermark_bits, step_size=step_size, frame_size=frame_size)
+    extracted_bits = extract_dct_dwt_svd(output_audio, len(watermark_bits), step_size=step_size, frame_size=frame_size)
     extracted_watermark = bits_to_text(extracted_bits)
     print(f"Extracted Watermark: {extracted_watermark}")
