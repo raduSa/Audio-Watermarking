@@ -56,21 +56,14 @@ def compress(input_wav_path, bitrate="64k"):
     compressed_audio = os.path.join(os.path.dirname(input_wav_path), f'decompressed_{os.path.basename(input_wav_path)}')
     AudioSegment.from_mp3(compressed_path).export(compressed_audio, format="wav")
     
-def crop(input_wav_path, start_sec, end_sec):
-    sample_rate, data = read_audio(input_wav_path)
+def crop(input_original_path, input_watermarked_path, start_sec, end_sec):
+    sample_rate, original_data = read_audio(input_original_path)
+    sample_rate, watermarked_data = read_audio(input_watermarked_path)
     start_sample = int(start_sec * sample_rate)
     end_sample = int(end_sec * sample_rate)
-    cropped = data[start_sample:end_sample]
-    cropped_audio = os.path.join(os.path.dirname(input_wav_path), f'cropped_{os.path.basename(input_wav_path)}')
+    cropped = watermarked_data[:start_sample] + original_data[start_sample:end_sample] + watermarked_data[end_sample:]
+    cropped_audio = os.path.join(os.path.dirname(input_original_path), f'cropped_{os.path.basename(input_original_path)}')
     write_audio(cropped_audio, sample_rate, cropped)
-    
-def insert_silence(input_wav_path, silence_duration_sec=1.0):
-    sample_rate, data = read_audio(input_wav_path)
-    silence_samples = int(silence_duration_sec * sample_rate)
-    silence = np.zeros((silence_samples, data.shape[1])) if len(data.shape) == 2 else np.zeros(silence_samples)
-    modified_data = np.concatenate((data[:len(data)//2], silence, data[len(data)//2:]))
-    silence_audio = os.path.join(os.path.dirname(input_wav_path), f'silence_{os.path.basename(input_wav_path)}')
-    write_audio(silence_audio, sample_rate, modified_data)
 
 def lowpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     sample_rate, audio = read_audio(input_wav_path)
@@ -115,16 +108,22 @@ def highpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     
     highpass_audio = os.path.join(os.path.dirname(input_wav_path), f'highpass_{os.path.basename(input_wav_path)}')
     write_audio(highpass_audio, sample_rate, filtered_audio)
+
+def requantize(input_wav_path, num_bits=8):
+    if num_bits <= 0 or num_bits > 16:
+        raise ValueError("Number of bits must be between 1 and 16!")
     
-def mix_to_mono(input_wav_path):
     sample_rate, data = read_audio(input_wav_path)
-    if len(data.shape) == 2:
-        mono_data = data.mean(axis=1)
-        mono_audio = os.path.join(os.path.dirname(input_wav_path), f'mono_{os.path.basename(input_wav_path)}')
-        write_audio(mono_audio, sample_rate, mono_data)
-    else:
-        print("Audio is already mono!")
+    max_val = 2**(num_bits - 1) - 1
+    min_val = -2**(num_bits - 1)
     
+    quantized_data = np.round(data / 32768 * max_val)
+    quantized_data = np.clip(quantized_data, min_val, max_val)
+    quantized_data = (quantized_data / max_val) * 32768
+    
+    requantized_audio = os.path.join(os.path.dirname(input_wav_path), f'requantized_{os.path.basename(input_wav_path)}')
+    write_audio(requantized_audio, sample_rate, quantized_data)
+
 def resample(input_wav_path, target_rate):
     if target_rate <= 0:
         raise ValueError("Target rate must be positive!")
