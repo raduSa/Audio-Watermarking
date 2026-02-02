@@ -179,7 +179,7 @@ if __name__ == "__main__":
     base_dir = 'Audio_Watermarking/sound_files'
     input_audio = os.path.join(base_dir, 'Beginning 2.wav')
     output_audio = os.path.join(base_dir, 'watermarked.wav')
-    watermark = 'I am a secret message!'
+    watermark = 'I am a secret message!  am a secret message  am a secret message'
     
     warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -189,7 +189,7 @@ if __name__ == "__main__":
         input_audio,
         output_audio,
         watermark_bits,
-        alpha=0.01
+        alpha=10.0
     )
     extracted_bits = extract_dct_spread_spectrum(
         output_audio,
