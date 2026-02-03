@@ -162,8 +162,13 @@ def forney(syndromes, locator, error_positions):
 
 def correct_errors(received, errors):
     corrected = received[:]
+    max_len = len(corrected)
     for pos, mag in errors.items():
-        corrected[pos] ^= mag
+        if 0 <= pos < max_len:
+            corrected[pos] ^= mag
+        else:
+            # silently fail if an error is found at an invalid index
+            pass
     return corrected
 
 def lagrange_interpolation(xs, ys):

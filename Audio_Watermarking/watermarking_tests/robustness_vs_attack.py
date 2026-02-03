@@ -15,7 +15,7 @@ ATTACKS = {
 
     'echo': {
         'func': lambda p, s: add_echo(p, delay_sec=0.3, decay=s),
-        'strengths': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5]
+        'strengths': np.arange(0.001, 0.2, 0.004).tolist()
     },
 
     'lowpass': {
@@ -55,7 +55,7 @@ ATTACKS = {
 
     'cropping': {
         'func': lambda o, w, crop_len : crop_replace_segments(o, w, crop_len),
-        'strengths': range(10000, 100000, 1000)
+        'strengths': [10, 100, 200, *range(300, 100000, 10000)]
     }
 }
 
@@ -73,7 +73,8 @@ def evaluate_algorithms_on_attack(
     dataset_dir,
     watermark_bits,
     output_dir,
-    use_rs_codes
+    use_rs_codes,
+    use_log_strength_axis
 ):
     os.makedirs(output_dir, exist_ok=True)
     audio_files = get_audio_files(dataset_dir)
@@ -150,19 +151,22 @@ def evaluate_algorithms_on_attack(
     plt.grid(True)
     plt.tight_layout()
 
+    if use_log_strength_axis:
+        plt.xscale('log')
+
     plot_path = os.path.join(output_dir, f"{attack}_robustness{'_rs' if use_rs_codes else ''}.pdf")
     plt.savefig(plot_path)
     plt.close()
 
 
 if __name__ == '__main__':
-    algorithms = [
+    algorithms = [        
         LSB(),
-        # EchoHiding(),
-        # SpreadSpectrum(),
-        # QIMDither(),
-        # DWT_QIM(),
-        # DWT_DCT_SVD(),
+        EchoHiding(),
+        SpreadSpectrum(),
+        QIMDither(),
+        DWT_QIM(),
+        DWT_DCT_SVD()
     ]
 
     watermark_bits = np.random.randint(0, 2, 256)
@@ -172,9 +176,10 @@ if __name__ == '__main__':
 
     evaluate_algorithms_on_attack(
         algorithms=algorithms,
-        attack='cropping',
+        attack='echo',
         dataset_dir=audio_dataset,
         watermark_bits=watermark_bits,
         output_dir=test_outputs,
-        use_rs_codes=False
+        use_rs_codes=True,
+        use_log_strength_axis=True
     )
