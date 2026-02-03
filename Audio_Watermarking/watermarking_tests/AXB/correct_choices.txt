@@ -1,0 +1,57 @@
+Correct guess if the original version is guessed!
+each folder contains: A, B, unwatermarked version
+Here are the correct answers (the original/unwatermarked copy)
+
+1. LSB
+	- cat: A
+	- chirp: A
+	- creator: A
+	- creator_music_box: B
+	- lava_chicken: A
+	- otherside: A
+	- stal: B
+
+2. Echo
+	- 5: B
+	- cat: B
+	- chirp: B
+	- far: B
+	- mellohi: A
+	- tears: A
+	- ward: B
+
+3. Spread
+	- 13: A
+	- creator_music_box: B
+	- otherside: A
+	- precipice: B
+	- relic: B
+	- strad: B
+	- wait: A
+
+4. QIM
+	- 5: A
+	- cat: A
+	- far: A
+	- otherside: A
+	- precipice: A
+	- relic: B
+	- strad: B
+
+5. DWT_QIM
+	- cat: A
+	- creator: B
+	- creator_music_box: B
+	- lava_chicken: A
+	- pigstep: A
+	- stal: A
+	- strad: B
+
+6. DWT_DCT_SVD
+	- blocks: B
+	- cat: B
+	- chirp: B
+	- pigstep: B
+	- precipice: B
+	- relic: B
+	- stal: A

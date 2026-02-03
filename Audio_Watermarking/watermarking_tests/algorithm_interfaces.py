@@ -24,7 +24,7 @@ class WatermarkAlgorithm(ABC):
 class LSB(WatermarkAlgorithm):
     def __init__(self):
         super().__init__("LSB")
-        self.num_lsbs = 5
+        self.num_lsbs = 6
 
     def embed(self, input_wav, output_wav, watermark_bits):
         self.watermark_length = len(watermark_bits)
@@ -36,7 +36,7 @@ class LSB(WatermarkAlgorithm):
 class EchoHiding(WatermarkAlgorithm):
     def __init__(self):
         super().__init__("Echo")
-        self.alpha = 0.4
+        self.alpha = 0.035
 
     def embed(self, input_wav, output_wav, watermark_bits):
         self.watermark_length = len(watermark_bits)
@@ -48,7 +48,7 @@ class EchoHiding(WatermarkAlgorithm):
 class SpreadSpectrum(WatermarkAlgorithm):
     def __init__(self):
         super().__init__("Spread")
-        self.alpha = 4
+        self.alpha = 4.5
 
     def embed(self, input_wav, output_wav, watermark_bits):
         self.watermark_length = len(watermark_bits)
@@ -60,7 +60,7 @@ class SpreadSpectrum(WatermarkAlgorithm):
 class QIMDither(WatermarkAlgorithm):
     def __init__(self):
         super().__init__("QIM")
-        self.delta = 200
+        self.delta = 150
 
     def embed(self, input_wav, output_wav, watermark_bits):
         self.watermark_length = len(watermark_bits)
@@ -72,7 +72,7 @@ class QIMDither(WatermarkAlgorithm):
 class DWT_QIM(WatermarkAlgorithm):
     def __init__(self):
         super().__init__("DWT_QIM")
-        self.delta = 100
+        self.delta = 75
 
     def embed(self, input_wav, output_wav, watermark_bits):
         self.watermark_length = len(watermark_bits)

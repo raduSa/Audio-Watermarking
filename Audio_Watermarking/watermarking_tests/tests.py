@@ -19,14 +19,14 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore", category=UserWarning)
     
     best_peaq = -np.inf
-    for delta in [10, 25, 50, 100, 200]:
+    for delta in [4, 5, 6]:
         peak_avg = 0
         for file in os.listdir(base_dir):
             if file.startswith('watermarked_dct_dwt_svd'):
                 continue
-            embed_dct_dwt_svd(os.path.join(base_dir, file), 
+            embed_lsb(os.path.join(base_dir, file),
                       os.path.join(base_dir, f'watermarked_dct_dwt_svd_{delta}_{file}'),
-                        watermark_bits, step_size=delta)
+                        watermark_bits, num_lsbs=delta)
             peaq_score = peaq(os.path.join(base_dir, file), 
                                     os.path.join(base_dir, f'watermarked_dct_dwt_svd_{delta}_{file}'))
             peak_avg += peaq_score.odg
@@ -37,4 +37,4 @@ if __name__ == "__main__":
             best_peaq = peak_avg
             best_delta = delta
         
-    print(f"Best delta: {best_delta} with PEAQ: {best_peaq}")        
+    print(f"Best delta: {best_delta} with PEAQ: {best_peaq}")
