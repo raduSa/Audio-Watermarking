@@ -42,6 +42,8 @@ def add_noise(input_wav_path, snr_db=50):
     noisy_data = data + noise
     noisy_audio = os.path.join(os.path.dirname(input_wav_path), f'noisy_{os.path.basename(input_wav_path)}')
     write_audio(noisy_audio, sample_rate, noisy_data)
+    return noisy_audio
+    # TODO all functions should return the path they saved to
     
 def amplify(input_wav_path, factor):
     sample_rate, data = read_audio(input_wav_path)

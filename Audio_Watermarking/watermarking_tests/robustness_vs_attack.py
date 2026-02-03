@@ -9,7 +9,7 @@ from copy import deepcopy
 ATTACKS = {
     "noise": {
         "func": lambda p, s: add_noise(p, snr_db=s),
-        "strengths": [50, 45, 40, 35, 30, 25, 20, 15, 10]
+        "strengths": range(70, 10, -2)
     },
     "echo": {
         "func": lambda p, s: add_echo(p, delay_sec=0.3, decay=s),
@@ -53,10 +53,10 @@ def evaluate_algorithms_on_attack(
     plt.figure(figsize=(8, 5))
 
     for algorithm in algorithms:
-        ber_curve = []
+        ber_curve = list()
 
         # Apply watermark on whole dataset
-        watermarked_files = []
+        watermarked_files = list()
         for audio_path in audio_files:
             out_path = os.path.join(
                 output_dir,
@@ -67,11 +67,10 @@ def evaluate_algorithms_on_attack(
 
         # Sweep attack strengths
         for strength in ATTACKS[attack]["strengths"]:
-            bers = []
+            bers = list()
 
-            for wm_path in watermarked_files:
-                attacked_path = deepcopy(wm_path)
-                ATTACKS["func"](attacked_path, strength)
+            for wm_path in watermarked_files:                
+                attacked_path = ATTACKS[attack]["func"](wm_path, strength)
 
                 extracted = algorithm.extract(attacked_path)
                 ber = bit_error_rate(watermark_bits, extracted)
@@ -80,7 +79,7 @@ def evaluate_algorithms_on_attack(
             ber_curve.append(np.mean(bers))
 
         plt.plot(
-            ATTACKS["strengths"],
+            ATTACKS[attack]["strengths"],
             ber_curve,
             marker="o",
             label=algorithm.name
@@ -93,7 +92,7 @@ def evaluate_algorithms_on_attack(
     plt.grid(True)
     plt.tight_layout()
 
-    plot_path = os.path.join(output_dir, f"{attack}_robustness.png")
+    plot_path = os.path.join(output_dir, f"{attack}_robustness.pdf")
     plt.savefig(plot_path)
     plt.close()
 
