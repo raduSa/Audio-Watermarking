@@ -13,19 +13,21 @@ def write_audio(output_path, sample_rate, data):
     data = np.clip(data, -32768, 32767).astype(np.int16)
     wavfile.write(output_path, sample_rate, data)
 
+import os
+import numpy as np
+
 def add_echo(input_wav_path, delay_sec=0.5, decay=0.5):
     sample_rate, data = read_audio(input_wav_path)
-    delay_samples = int(delay_sec * sample_rate)
-    is_stereo = len(data.shape) == 2
     
-    if is_stereo:
-        output = np.zeros((len(data) + delay_samples, data.shape[1]))
-        output[:len(data)] = data
-        output[delay_samples:delay_samples + len(data)] += decay * data
-    else:
-        output = np.zeros(len(data) + delay_samples)
-        output[:len(data)] = data
-        output[delay_samples:delay_samples + len(data)] += decay * data
+    delay_samples = int(delay_sec * sample_rate)
+    length = len(data)
+    
+    output = np.copy(data).astype(float)
+    
+    if delay_samples < length:
+        remaining_space = length - delay_samples
+        
+        output[delay_samples:] += decay * data[:remaining_space]
     
     peak_in = np.max(np.abs(data))
     peak_out = np.max(np.abs(output))

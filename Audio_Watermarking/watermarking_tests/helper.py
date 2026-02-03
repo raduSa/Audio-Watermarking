@@ -12,11 +12,11 @@ step_size = 150.0
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-alg = EchoHiding()
+alg = DWT_DCT_SVD()
 
 # embed_dct_dwt_svd(input_audio, output_audio, watermark_bits, step_size=step_size, frame_size=frame_size)
 alg.embed(input_audio, output_audio, watermark_bits)
-cropped_audio = crop_replace_segments(input_audio, output_audio, crop_len=1000)
+cropped_audio = add_echo(input_audio, delay_sec=0.5, decay=0.00001)
 extracted_bits = alg.extract(cropped_audio)
 extracted_bits = np.frombuffer(extracted_bits.encode("ascii"), dtype=np.uint8) - ord('0')
 print(watermark_bits ^ extracted_bits)
