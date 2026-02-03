@@ -5,6 +5,7 @@ import os, warnings
 import matplotlib.pyplot as plt
 from Audio_Watermarking.watermarking_tests.algorithm_interfaces import *
 from copy import deepcopy
+from Audio_Watermarking.reed_solomon.rs import *
 
 ATTACKS = {
     "noise": {
@@ -45,12 +46,24 @@ def evaluate_algorithms_on_attack(
     attack,
     dataset_dir,
     watermark_bits,
-    output_dir
+    output_dir,
+    use_rs_codes
 ):
     os.makedirs(output_dir, exist_ok=True)
     audio_files = get_audio_files(dataset_dir)
 
     plt.figure(figsize=(8, 5))
+
+    if use_rs_codes:
+        # The way we have to encode is the following
+        # 1. Take the bitstring, pad it and turn it into bytes (store the length, required for decoding)
+        # 2. Encode the byte stream into a RS codeword (all codewords will be 255 bytes long)
+        # 3. Take the codeword, convert it into a bitstring (2040 bits)
+        # 4. Give the bitstring to the embedding algorithm
+        watermark_bytes, pad_length = bitstring_to_bytes(watermark_bits)
+        watermark_bytes_length = len(watermark_bytes)
+        codeword = rs_eval_encode(watermark_bytes, 255)
+        watermark_bits = codeword_to_bitstring(codeword)
 
     for algorithm in algorithms:
         ber_curve = list()
@@ -72,8 +85,15 @@ def evaluate_algorithms_on_attack(
             for wm_path in watermarked_files:                
                 attacked_path = ATTACKS[attack]["func"](wm_path, strength)
 
-                extracted = algorithm.extract(attacked_path)
-                ber = bit_error_rate(watermark_bits, extracted)
+                extracted_bits = algorithm.extract(attacked_path)
+
+                if use_rs_codes:
+                    # The way we extract the watermark is the same as described above, just inverted order
+                    codeword = bitstring_to_codeword(extracted_bits)
+                    decoded_bytes = rs_decode(codeword, 255, watermark_bytes_length)
+                    extracted_bits = bytes_to_bitstring(decoded_bytes, pad_length)
+                    
+                ber = bit_error_rate(watermark_bits, extracted_bits)
                 bers.append(ber)
 
             ber_curve.append(np.mean(bers))
@@ -92,22 +112,23 @@ def evaluate_algorithms_on_attack(
     plt.grid(True)
     plt.tight_layout()
 
-    plot_path = os.path.join(output_dir, f"{attack}_robustness.pdf")
+    plot_path = os.path.join(output_dir, f"{attack}_robustness{use_rs_codes % '_rs' : ''}.pdf")
     plt.savefig(plot_path)
     plt.close()
 
 
 if __name__ == "__main__":
     algorithms = [
-        LSB(),
-        EchoHiding(),
-        SpreadSpectrum(),
-        QIMDither(),
-        DWT_QIM(),
+        # LSB(),
+        # EchoHiding(),
+        # SpreadSpectrum(),
+        # QIMDither(),
+        # DWT_QIM(),
         DWT_DCT_SVD(),
     ]
 
     watermark_bits = np.random.randint(0, 2, 256)
+    watermark_bits = ''.join(watermark_bits.astype(str))
     audio_dataset = f'Audio_Watermarking/sound_files/audio_dataset'
     test_outputs = f'Audio_Watermarking/watermarking_tests/testing_helper'
 
@@ -116,5 +137,6 @@ if __name__ == "__main__":
         attack='noise',
         dataset_dir=audio_dataset,
         watermark_bits=watermark_bits,
-        output_dir=test_outputs
+        output_dir=test_outputs,
+        use_rs_codes=True
     )

@@ -1,4 +1,4 @@
-from .gf256 import *
+from Audio_Watermarking.reed_solomon.gf256 import *
 
 # def poly_mul(p, q):
 #     r = [0] * (len(p) + len(q) - 1)
@@ -199,6 +199,45 @@ def rs_decode(received, n, k):
 
     return lagrange_interpolation(xs, ys)
 
+# Encoding from bitstring and other useful conversions
+
+def bitstring_to_bytes(bit_string):
+    # Ensure length is divisible by 8
+    pad_len = (8 - len(bit_string) % 8) % 8
+    padded_bits = bit_string + '0' * pad_len
+    
+    msg_bytes = list()
+    for i in range(0, len(padded_bits), 8):
+        byte_chunk = padded_bits[i:i+8]
+        msg_bytes.append(int(byte_chunk, 2))
+        
+    return msg_bytes, pad_len
+
+def bytes_to_bitstring(msg_bytes, pad_len):
+    res = "".join(f"{b:08b}" for b in msg_bytes)
+    
+    if pad_len > 0:
+        res = res[:-pad_len]
+    return res
+
+def codeword_to_bitstring(codeword):
+    # A codeword is 255 bytes long
+    # Convert each coefficient to an 8-bit binary string (e.g. 5 -> '00000101')
+    binary_representations = [f'{x:08b}' for x in codeword]
+    
+    bit_string = ''.join(binary_representations)
+    
+    return bit_string
+
+def bitstring_to_codeword(bit_string):
+    codeword = list()
+    
+    for i in range(0, len(bit_string), 8):
+        byte_chunk = bit_string[i:i+8]
+        codeword.append(int(byte_chunk, 2))
+        
+    return codeword
+
 if __name__ == '__main__':
     # --- Test Case ---
     msg = [10, 20, 30, 40, 50]
@@ -212,3 +251,28 @@ if __name__ == '__main__':
 
     decoded = rs_decode(encoded, 255, 5)
     print(f"decoded:  {decoded}")
+
+    # Bit stream
+    bits = "1" * 255 
+
+    msg, padding = bitstring_to_bytes(bits)
+    print(f"Message length (K): {len(msg)} symbols") # Output: 32
+
+    codeword = rs_eval_encode(msg, 255) 
+    print(f"Codeword length (N): {len(codeword)} symbols") # Output: 255
+
+    bit_string = codeword_to_bitstring(codeword)
+    print(f'Bit string length: {len(bit_string)}')
+
+    codeword = bitstring_to_codeword(bit_string)
+    print(f"Codeword length (N): {len(codeword)} symbols") # Output: 255
+
+    for i in range(100, 150):
+        codeword[i] = 0
+
+    decoded_msg = rs_decode(codeword, 255, len(msg))
+
+    # 3. Convert back to bits
+    recovered_bits = bytes_to_bitstring(decoded_msg, padding)
+
+    print(f"Match: {bits == recovered_bits}")

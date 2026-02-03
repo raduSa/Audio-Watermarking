@@ -1,4 +1,4 @@
-from rs import *
+from Audio_Watermarking.reed_solomon.rs import *
 
 def test_gf_mul_div():
     for a in range(1, 255):
@@ -12,7 +12,7 @@ def test_exp_log():
 def test_rs_eval_encode_consistency():
     msg = [1, 2, 3, 4]
     n = 10
-    codeword = rs_eval_encode(msg, n)
+    codeword = rs_eval_encode(msg, 255)
 
     xs = [EXP[i] for i in range(len(msg))]
     ys = codeword[:len(msg)]
