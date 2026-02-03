@@ -33,6 +33,7 @@ def add_echo(input_wav_path, delay_sec=0.5, decay=0.5):
     
     echoed_audio = os.path.join(os.path.dirname(input_wav_path), f'echoed_{os.path.basename(input_wav_path)}')
     write_audio(echoed_audio, sample_rate, output)
+    return echoed_audio
 
 def add_noise(input_wav_path, snr_db=50):
     sample_rate, data = read_audio(input_wav_path)
@@ -42,14 +43,14 @@ def add_noise(input_wav_path, snr_db=50):
     noisy_data = data + noise
     noisy_audio = os.path.join(os.path.dirname(input_wav_path), f'noisy_{os.path.basename(input_wav_path)}')
     write_audio(noisy_audio, sample_rate, noisy_data)
-    return noisy_audio
-    # TODO all functions should return the path they saved to
+    return noisy_audio    
     
 def amplify(input_wav_path, factor):
     sample_rate, data = read_audio(input_wav_path)
     amplified_data = data * factor
     amplified_audio = os.path.join(os.path.dirname(input_wav_path), f'amplified_{os.path.basename(input_wav_path)}')
     write_audio(amplified_audio, sample_rate, amplified_data)
+    return amplified_audio
 
 def compress(input_wav_path, bitrate="64k"):
     audio = AudioSegment.from_wav(input_wav_path)
@@ -57,6 +58,7 @@ def compress(input_wav_path, bitrate="64k"):
     audio.export(compressed_path, format="mp3", bitrate=bitrate)
     compressed_audio = os.path.join(os.path.dirname(input_wav_path), f'decompressed_{os.path.basename(input_wav_path)}')
     AudioSegment.from_mp3(compressed_path).export(compressed_audio, format="wav")
+    return compressed_audio
     
 def crop(input_original_path, input_watermarked_path, start_sec, end_sec):
     sample_rate, original_data = read_audio(input_original_path)
@@ -66,6 +68,7 @@ def crop(input_original_path, input_watermarked_path, start_sec, end_sec):
     cropped = watermarked_data[:start_sample] + original_data[start_sample:end_sample] + watermarked_data[end_sample:]
     cropped_audio = os.path.join(os.path.dirname(input_original_path), f'cropped_{os.path.basename(input_original_path)}')
     write_audio(cropped_audio, sample_rate, cropped)
+    return cropped_audio
 
 def lowpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     sample_rate, audio = read_audio(input_wav_path)
@@ -87,6 +90,7 @@ def lowpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     
     lowpass_audio = os.path.join(os.path.dirname(input_wav_path), f'lowpass_{os.path.basename(input_wav_path)}')
     write_audio(lowpass_audio, sample_rate, filtered_audio)
+    return lowpass_audio
     
 def highpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     sample_rate, audio = read_audio(input_wav_path)
@@ -110,6 +114,7 @@ def highpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     
     highpass_audio = os.path.join(os.path.dirname(input_wav_path), f'highpass_{os.path.basename(input_wav_path)}')
     write_audio(highpass_audio, sample_rate, filtered_audio)
+    return highpass_audio
 
 def requantize(input_wav_path, num_bits=8):
     if num_bits <= 0 or num_bits > 16:
@@ -125,6 +130,7 @@ def requantize(input_wav_path, num_bits=8):
     
     requantized_audio = os.path.join(os.path.dirname(input_wav_path), f'requantized_{os.path.basename(input_wav_path)}')
     write_audio(requantized_audio, sample_rate, quantized_data)
+    return requantized_audio
 
 def resample(input_wav_path, target_rate):
     if target_rate <= 0:
@@ -156,8 +162,7 @@ def resample(input_wav_path, target_rate):
         upsampled = signal.resample(downsampled, original_length)
     
     resampled_audio = os.path.join(os.path.dirname(input_wav_path), f'resampled_{os.path.basename(input_wav_path)}')
-    write_audio(resampled_audio, sample_rate, upsampled)
-    
+    write_audio(resampled_audio, sample_rate, upsampled)    
     return resampled_audio
 
 def speed_change(input_wav_path, speed_factor=1.5):
