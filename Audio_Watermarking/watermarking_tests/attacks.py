@@ -3,6 +3,7 @@ import os
 from scipy.io import wavfile
 from scipy import signal
 from pydub import AudioSegment
+from Audio_Watermarking.algorithms.dct_dwt_svd import *
 
 def read_audio(input_wav_path):
     sample_rate, data = wavfile.read(input_wav_path)
@@ -60,15 +61,43 @@ def compress(input_wav_path, bitrate="64k"):
     AudioSegment.from_mp3(compressed_path).export(compressed_audio, format="wav")
     return compressed_audio
     
-def crop(input_original_path, input_watermarked_path, start_sec, end_sec):
-    sample_rate, original_data = read_audio(input_original_path)
-    sample_rate, watermarked_data = read_audio(input_watermarked_path)
-    start_sample = int(start_sec * sample_rate)
-    end_sample = int(end_sec * sample_rate)
-    cropped = watermarked_data[:start_sample] + original_data[start_sample:end_sample] + watermarked_data[end_sample:]
-    cropped_audio = os.path.join(os.path.dirname(input_original_path), f'cropped_{os.path.basename(input_original_path)}')
-    write_audio(cropped_audio, sample_rate, cropped)
-    return cropped_audio
+def crop_replace_segments(
+    original_wav_path,
+    watermarked_wav_path,    
+    crop_len=1000,    
+):
+    sr_orig, original = read_audio(original_wav_path)
+    sr_wm, watermarked = read_audio(watermarked_wav_path)
+
+    if sr_orig != sr_wm:
+        raise ValueError("Original and watermarked sample rates must match")
+
+    length = len(original)
+
+    if crop_len >= length:
+        raise ValueError("crop_len must be smaller than signal length")
+    
+    attacked = np.copy(watermarked)
+    
+    for position in ['front', 'middle', 'end']:
+        if position == "front":
+            start = 0
+        elif position == "middle":
+            start = length // 2 - crop_len // 2
+        elif position == "end":
+            start = length - crop_len        
+
+        end = start + crop_len
+        
+        attacked[start:end] = original[start:end]
+
+    output_path = os.path.join(
+        os.path.dirname(watermarked_wav_path),
+        f"crop_{os.path.basename(watermarked_wav_path)}"
+    )
+
+    write_audio(output_path, sr_wm, attacked)
+    return output_path
 
 def lowpass_filter(input_wav_path, cutoff_freq, num_taps=101):
     sample_rate, audio = read_audio(input_wav_path)
