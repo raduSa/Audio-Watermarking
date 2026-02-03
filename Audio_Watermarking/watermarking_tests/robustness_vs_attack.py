@@ -54,6 +54,8 @@ def evaluate_algorithms_on_attack(
 
     plt.figure(figsize=(8, 5))
 
+    orig_watermark_bits = deepcopy(watermark_bits)
+
     if use_rs_codes:
         # The way we have to encode is the following
         # 1. Take the bitstring, pad it and turn it into bytes (store the length, required for decoding)
@@ -66,6 +68,7 @@ def evaluate_algorithms_on_attack(
         watermark_bits = codeword_to_bitstring(codeword)
 
     for algorithm in algorithms:
+        print(f'Testing algortihm: {algorithm.name}')
         ber_curve = list()
 
         # Apply watermark on whole dataset
@@ -79,10 +82,12 @@ def evaluate_algorithms_on_attack(
             watermarked_files.append(out_path)
 
         # Sweep attack strengths
-        for strength in ATTACKS[attack]["strengths"]:
+        for i, strength in enumerate(ATTACKS[attack]["strengths"]):
             bers = list()
 
-            for wm_path in watermarked_files:                
+            for j, wm_path in enumerate(watermarked_files):
+                print(f'Testing {i * len(watermarked_files) + j} \
+                      /{len(watermarked_files) * len(ATTACKS[attack]["strengths"])}')
                 attacked_path = ATTACKS[attack]["func"](wm_path, strength)
 
                 extracted_bits = algorithm.extract(attacked_path)
@@ -92,8 +97,8 @@ def evaluate_algorithms_on_attack(
                     codeword = bitstring_to_codeword(extracted_bits)
                     decoded_bytes = rs_decode(codeword, 255, watermark_bytes_length)
                     extracted_bits = bytes_to_bitstring(decoded_bytes, pad_length)
-                    
-                ber = bit_error_rate(watermark_bits, extracted_bits)
+
+                ber = bit_error_rate(orig_watermark_bits, extracted_bits)
                 bers.append(ber)
 
             ber_curve.append(np.mean(bers))
@@ -112,24 +117,24 @@ def evaluate_algorithms_on_attack(
     plt.grid(True)
     plt.tight_layout()
 
-    plot_path = os.path.join(output_dir, f"{attack}_robustness{use_rs_codes % '_rs' : ''}.pdf")
+    plot_path = os.path.join(output_dir, f"{attack}_robustness{'_rs' if use_rs_codes else ''}.pdf")
     plt.savefig(plot_path)
     plt.close()
 
 
 if __name__ == "__main__":
     algorithms = [
-        # LSB(),
-        # EchoHiding(),
-        # SpreadSpectrum(),
-        # QIMDither(),
-        # DWT_QIM(),
+        LSB(),
+        EchoHiding(),
+        SpreadSpectrum(),
+        QIMDither(),
+        DWT_QIM(),
         DWT_DCT_SVD(),
     ]
 
     watermark_bits = np.random.randint(0, 2, 256)
     watermark_bits = ''.join(watermark_bits.astype(str))
-    audio_dataset = f'Audio_Watermarking/sound_files/audio_dataset'
+    audio_dataset = f'Audio_Watermarking/sound_files/audio_dataset/90s'
     test_outputs = f'Audio_Watermarking/watermarking_tests/testing_helper'
 
     evaluate_algorithms_on_attack(
@@ -138,5 +143,5 @@ if __name__ == "__main__":
         dataset_dir=audio_dataset,
         watermark_bits=watermark_bits,
         output_dir=test_outputs,
-        use_rs_codes=True
+        use_rs_codes=False
     )

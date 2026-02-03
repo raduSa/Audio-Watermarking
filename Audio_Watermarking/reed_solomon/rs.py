@@ -151,7 +151,11 @@ def forney(syndromes, locator, error_positions):
         den = 0
         for i in range(1, len(locator), 2):
             den ^= gf_mul(locator[i], EXP[(LOG[x_inv] * (i-1)) % 255])
-
+        
+        if den == 0:
+            print("Uncorrectable Error")
+            continue
+        
         errors[pos] = gf_div(num, den)
 
     return errors
