@@ -1,0 +1,33 @@
+1. LSB 
+	- Nicolas: 2/3
+	- Rzv: 0/2
+	- Calin: 5/7
+	- Ioan: 3/7
+
+2. Echo
+	- Calin: 3/7
+	- Rzv: 0/2
+	- Nicolas: 2/3
+	- Ioan: 3/7
+
+3. Spread
+	- Calin: 2/7
+	- Rzv: 0/2
+	- Nicolas: 2/3
+	- Ioan: 2/7
+
+4. QIM
+	- Calin: 4/7
+	- Rzv: 2/2
+	- Nicolas: 3/3
+	- Ioan: 3/7
+
+5. DWT_QIM
+	- Calin: 3/7
+	- Rzv: 0/2
+	- Ioan: 5/7
+
+6. DWT_DCT_SVD
+	- Calin: 5/7
+	- Rzv: 2/2
+	- Ioan: 1/7

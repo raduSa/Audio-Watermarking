@@ -20,7 +20,7 @@ ATTACKS = {
 
     'lowpass': {
         'func': lambda p, s: lowpass_filter(p, cutoff_freq=s),
-        'strengths': [16000, 14000, 12000, 10000, 8000, 6000, 4000]
+        'strengths': list(range(20000, 1000, -500))
     },
 
     'highpass': {
@@ -30,7 +30,7 @@ ATTACKS = {
 
     'requant': {
         'func': lambda p, s: requantize(p, num_bits=s),
-        'strengths': [16, 14, 12, 10, 8, 6]
+        'strengths': list(range(16, 5, -1))
     },
 
     'resample': {
@@ -50,7 +50,7 @@ ATTACKS = {
 
     'compression': {
         'func': lambda p, s: compress(p, bitrate=s),
-        'strengths': [f"{b}k" for b in range(300, 36, -10)]
+        'strengths': [f"{b}k" for b in range(300, 100, -20)]
     },
 
     'cropping': {
@@ -163,11 +163,11 @@ def evaluate_algorithms_on_attack(
 
 if __name__ == '__main__':
     algorithms = [        
-        # LSB(),
-        # EchoHiding(),
-        # SpreadSpectrum(),
-        # QIMDither(),
-        # DWT_QIM(),
+        LSB(),
+        EchoHiding(),
+        SpreadSpectrum(),
+        QIMDither(),
+        DWT_QIM(),
         DWT_DCT_SVD()
     ]
 
@@ -179,10 +179,10 @@ if __name__ == '__main__':
 
     evaluate_algorithms_on_attack(
         algorithms=algorithms,
-        attack='compression',
+        attack='requant',
         dataset_dir=audio_dataset,
         watermark_bits=watermark_bits,
         output_dir=test_outputs,
-        use_rs_codes=False,
+        use_rs_codes=True,
         use_log_strength_axis=False
     )

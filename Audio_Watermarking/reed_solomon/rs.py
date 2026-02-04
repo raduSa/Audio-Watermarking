@@ -1,31 +1,5 @@
 from Audio_Watermarking.reed_solomon.gf256 import *
 
-# def poly_mul(p, q):
-#     r = [0] * (len(p) + len(q) - 1)
-#     for i in range(len(p)):
-#         for j in range(len(q)):
-#             r[i + j] ^= gf_mul(p[i], q[j])
-#     return r
-
-# def rs_generator_poly(nsym):
-#     g = [1]
-#     for i in range(nsym):
-#         g = poly_mul(g, [1, EXP[i]])
-#     return g
-
-# def rs_encode_msg(msg, nsym):
-#     gen = rs_generator_poly(nsym)
-#     msg_out = msg + [0] * nsym
-
-#     for i in range(len(msg)):
-#         coef = msg_out[i]
-#         if coef != 0:
-#             for j in range(len(gen)):
-#                 msg_out[i + j] ^= gf_mul(gen[j], coef)
-
-#     # original message + parity
-#     return msg + msg_out[-nsym:]
-
 # We get the codeword by evaluating the polynomial at alpha ^ (0 through n-1)
 # Equivalent do DFT over finite field
 def rs_eval_encode(msg, n):    
