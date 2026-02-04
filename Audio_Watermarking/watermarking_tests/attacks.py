@@ -196,13 +196,3 @@ def resample(input_wav_path, target_rate):
     resampled_audio = os.path.join(os.path.dirname(input_wav_path), f'resampled_{os.path.basename(input_wav_path)}')
     write_audio(resampled_audio, sample_rate, upsampled)    
     return resampled_audio
-
-def speed_change(input_wav_path, speed_factor=1.5):
-    audio = AudioSegment.from_wav(input_wav_path)
-    sped_audio = audio._spawn(audio.raw_data, overrides={
-        "frame_rate": int(audio.frame_rate * speed_factor)
-    })
-    sped_audio = sped_audio.set_frame_rate(audio.frame_rate)
-    output_path = os.path.join(os.path.dirname(input_wav_path), f'sped_{os.path.basename(input_wav_path)}')
-    sped_audio.export(output_path, format="wav")
-    return output_path
