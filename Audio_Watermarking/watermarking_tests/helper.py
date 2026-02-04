@@ -3,8 +3,8 @@ from Audio_Watermarking.watermarking_tests.attacks import *
 from Audio_Watermarking.utils.utils import bit_error_rate
 from Audio_Watermarking.watermarking_tests.algorithm_interfaces import *
 
-base_dir = 'Audio_Watermarking/sound_files'
-input_audio = os.path.join(base_dir, 'Biome Fest.wav')
+base_dir = 'Audio_Watermarking/sound_files/audio_dataset/90s'
+input_audio = os.path.join(base_dir, '5.wav')
 output_audio = os.path.join('Audio_Watermarking/watermarking_tests', 'svd_watermarked.wav')
 watermark_bits = np.random.randint(0, 2, 256)
 frame_size = 1024
@@ -16,7 +16,7 @@ alg = DWT_DCT_SVD()
 
 # embed_dct_dwt_svd(input_audio, output_audio, watermark_bits, step_size=step_size, frame_size=frame_size)
 alg.embed(input_audio, output_audio, watermark_bits)
-cropped_audio = add_echo(input_audio, delay_sec=0.5, decay=0.00001)
+cropped_audio = compress(output_audio, bitrate='200k')
 extracted_bits = alg.extract(cropped_audio)
 extracted_bits = np.frombuffer(extracted_bits.encode("ascii"), dtype=np.uint8) - ord('0')
 print(watermark_bits ^ extracted_bits)

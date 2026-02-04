@@ -50,7 +50,7 @@ ATTACKS = {
 
     'compression': {
         'func': lambda p, s: compress(p, bitrate=s),
-        'strengths': ['192k', '128k', '96k', '64k', '48k', '32k']
+        'strengths': [f"{b}k" for b in range(300, 36, -10)]
     },
 
     'cropping': {
@@ -138,7 +138,9 @@ def evaluate_algorithms_on_attack(
             ber_curve.append(np.mean(bers))
 
         plt.plot(
-            ATTACKS[attack]['strengths'],
+            ATTACKS[attack]['strengths'] \
+            if attack != 'compression' \
+            else [int(val[:-1]) for val in ATTACKS[attack]['strengths']],
             ber_curve,
             marker='o',
             label=algorithm.name
@@ -161,25 +163,26 @@ def evaluate_algorithms_on_attack(
 
 if __name__ == '__main__':
     algorithms = [        
-        LSB(),
-        EchoHiding(),
-        SpreadSpectrum(),
-        QIMDither(),
-        DWT_QIM(),
+        # LSB(),
+        # EchoHiding(),
+        # SpreadSpectrum(),
+        # QIMDither(),
+        # DWT_QIM(),
         DWT_DCT_SVD()
     ]
 
     watermark_bits = np.random.randint(0, 2, 256)
     watermark_bits = ''.join(watermark_bits.astype(str))
+    # When using rs codes, the 90s dataset should be used (as 30s is too few samples)
     audio_dataset = f'Audio_Watermarking/sound_files/audio_dataset/90s'
     test_outputs = f'Audio_Watermarking/watermarking_tests/testing_helper'
 
     evaluate_algorithms_on_attack(
         algorithms=algorithms,
-        attack='echo',
+        attack='compression',
         dataset_dir=audio_dataset,
         watermark_bits=watermark_bits,
         output_dir=test_outputs,
-        use_rs_codes=True,
-        use_log_strength_axis=True
+        use_rs_codes=False,
+        use_log_strength_axis=False
     )

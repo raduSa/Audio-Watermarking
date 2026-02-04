@@ -62,6 +62,7 @@ def compress(input_wav_path, bitrate="64k"):
     compressed_audio = os.path.join(os.path.dirname(input_wav_path), f'decompressed_{os.path.basename(input_wav_path)}')
     AudioSegment.from_mp3(compressed_path).export(compressed_audio, format="wav")
     return compressed_audio
+
     
 def crop_replace_segments(
     original_wav_path,
