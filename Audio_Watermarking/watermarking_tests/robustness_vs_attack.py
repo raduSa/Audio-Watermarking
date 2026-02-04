@@ -25,7 +25,7 @@ ATTACKS = {
 
     'highpass': {
         'func': lambda p, s: highpass_filter(p, cutoff_freq=s),
-        'strengths': [200, 400, 800, 1200, 2000, 4000]
+        'strengths': [i for i in range(10, 20000, 200)]
     },
 
     'requant': {
@@ -174,12 +174,12 @@ if __name__ == '__main__':
     watermark_bits = np.random.randint(0, 2, 256)
     watermark_bits = ''.join(watermark_bits.astype(str))
     # When using rs codes, the 90s dataset should be used (as 30s is too few samples)
-    audio_dataset = f'Audio_Watermarking/sound_files/audio_dataset/90s'
+    audio_dataset = f'Audio_Watermarking/sound_files/highpass_testing/90s'
     test_outputs = f'Audio_Watermarking/watermarking_tests/testing_helper'
 
     evaluate_algorithms_on_attack(
         algorithms=algorithms,
-        attack='requant',
+        attack='highpass',
         dataset_dir=audio_dataset,
         watermark_bits=watermark_bits,
         output_dir=test_outputs,
